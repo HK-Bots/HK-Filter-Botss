@@ -158,9 +158,9 @@ else:
     ON_HEROKU = False
 HAS_SSL=bool(getenv('HAS_SSL',True))
 if HAS_SSL:
-    URL = "https://afshs-43f3f947f5a1.herokuapp.com/".format(FQDN)
+    URL = "https://autofilterhk.onrender.com/".format(FQDN)
 else:
-    URL = "https://afshs-43f3f947f5a1.herokuapp.com/".   format(FQDN)
+    URL = "https://autofilterhk.onrender.com/".   format(FQDN)
 
 # add premium logs channel id
 PREMIUM_LOGS = int(environ.get('PREMIUM_LOGS', '-1002139657732'))
