@@ -20,7 +20,7 @@ async def ai_generate(client, message):
   
     if user_input.lower() in ["who is your owner", "what is your owner name"]:  
         buttons = [[
-            InlineKeyboardButton("ɢʀᴏᴜᴘ", url="https://t.me/weebs_support")
+            InlineKeyboardButton("ɢʀᴏᴜᴘ", url="https://t.me/h_k_Bots")
         ]]
         reply_markup = InlineKeyboardMarkup(buttons)
         await message.reply_sticker("CAACAgUAAxkBAAEBVPFlqURKlcRL5gwsCr_95NUy1yomWAACbQgAAqkDGFZZit7uxEySIh4E")
@@ -69,7 +69,7 @@ async def ai_generate(client, message):
 @Client.on_message(filters.command("ask") & filters.private)
 async def ai_generate_private(client, message):
   buttons = [[
-    InlineKeyboardButton("ᴜsᴇ ɪɴ ɢʀᴏᴜᴘ", url="https://t.me/Silicon_Botz")
+    InlineKeyboardButton("ᴜsᴇ ɪɴ ɢʀᴏᴜᴘ", url="https://t.me/h_k_Bots")
   ]]
   reply_markup = InlineKeyboardMarkup(buttons)
   await message.reply_sticker("CAACAgUAAxkBAAEBVPFlqURKlcRL5gwsCr_95NUy1yomWAACbQgAAqkDGFZZit7uxEySIh4E")
