@@ -28,7 +28,7 @@ async def ytsearch(_, message: Message):
             [
                 [
                     InlineKeyboardButton(
-                        "• ᴜᴘᴅᴀᴛᴇs •", url="https://t.me/Silicon_Bot_Update",
+                        "• ᴜᴘᴅᴀᴛᴇs •", url="https://t.me/main_movie_hub",
                     ),
                 ]
             ]
