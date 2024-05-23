@@ -2,6 +2,7 @@ from pyrogram import filters, Client
 import bs4, requests, re, asyncio
 import os, traceback, random
 from info import LOG_CHANNEL as DUMP_GROUP
+from info import BOT_USERNAME
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0",
     "Accept": "*/*",
@@ -23,9 +24,9 @@ async def link_handler(Mbot, message):
         url= link.replace("instagram.com","ddinstagram.com")
         url=url.replace("==","%3D%3D")
         if url.endswith("="):
-           dump_file=await message.reply_video(url[:-1],caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+           dump_file=await message.reply_video(url[:-1],caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME} /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
         else:
-            dump_file=await message.reply_video(url,caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+            dump_file=await message.reply_video(url,caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
         if 'dump_file' in locals():
            await dump_file.forward(DUMP_GROUP)
         await m.delete()
@@ -54,15 +55,15 @@ async def link_handler(Mbot, message):
                       return await message.reply("oops something went wrong")
                try:
                    if ddinsta:
-                      dump_file=await message.reply_video(content_value,caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+                      dump_file=await message.reply_video(content_value,caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
                    else:
-                       dump_file=await message.reply_video(content_value, caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+                       dump_file=await message.reply_video(content_value, caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
                except:
                    downfile=f"{os.getcwd()}/{random.randint(1,10000000)}"
                    with open(downfile,'wb') as x:
                        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
                        x.write(requests.get(content_value,headers=headers).content)
-                   dump_file=await message.reply_video(downfile,caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub") 
+                   dump_file=await message.reply_video(downfile,caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}") 
             elif "/p/" in url:
                   meta_tag = requests.post("https://saveig.app/api/ajaxSearch", data={"q": link, "t": "media", "lang": "en"}, headers=headers)
                   if meta_tag.ok:
@@ -75,7 +76,7 @@ async def link_handler(Mbot, message):
                      com=await message.reply_text(meta[i])
                      await asyncio.sleep(1)
                      try:
-                        dump_file=await message.reply_video(com.text,caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+                        dump_file=await message.reply_video(com.text,caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
                         await com.delete()
                      except:
                          pass 
@@ -87,12 +88,12 @@ async def link_handler(Mbot, message):
                   else:
                       return await message.reply("Oops something went wrong")
                   try:
-                     dump_file=await message.reply_video(meta[0], caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main")
+                     dump_file=await message.reply_video(meta[0], caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
                   except:
                       com=await message.reply(meta[0])
                       await asyncio.sleep(1)
                       try:
-                          dump_file=await message.reply_video(com.text,caption="ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @main_movie_hub")
+                          dump_file=await message.reply_video(com.text,caption="✨  ᴩᴏᴡᴇʀᴇᴅ ʙy @main_movie_hub /n✨ Gᴇɴᴇʀᴀᴛᴇᴅ ʙʏ : @{BOT_USERNAME}")
                           await com.delete()
                       except:
                           pass
@@ -115,4 +116,4 @@ async def link_handler(Mbot, message):
             await m.delete()
             if 'downfile' in locals():
                 os.remove(downfile)
-            await message.reply("<a href='https://t.me/main_movie_hub'>ᴜsᴇ ɴᴇᴡ ғᴇᴀᴛᴜʀᴇs</a>")
+            await message.reply("<a href='https://t.me/{BOT_USERNAME}'>ᴜsᴇ ɴᴇᴡ ғᴇᴀᴛᴜʀᴇs</a>")
