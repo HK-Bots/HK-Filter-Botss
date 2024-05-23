@@ -16,14 +16,14 @@ async def ai_generate(client, message):
 
     user_input = " ".join(user_input)
     await client.send_message(LOG_CHANNEL, text=f"#google_ai ʀᴇǫᴜᴇsᴛ ғʀᴏᴍ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}")
-    s = await message.reply_sticker("CAACAgUAAxkBAAEBVPFlqURKlcRL5gwsCr_95NUy1yomWAACbQgAAqkDGFZZit7uxEySIh4E")
+    s = await message.reply_sticker("CAACAgUAAxkBAAIgTWZPJLzL3hCOaW2Lfkpu8Dd8TXIAA0EMAAKqVXhWT8KVe1tAmKweBA")
   
     if user_input.lower() in ["who is your owner", "what is your owner name"]:  
         buttons = [[
             InlineKeyboardButton("ɢʀᴏᴜᴘ", url="https://t.me/h_k_Bots")
         ]]
         reply_markup = InlineKeyboardMarkup(buttons)
-        await message.reply_sticker("CAACAgUAAxkBAAEBVPFlqURKlcRL5gwsCr_95NUy1yomWAACbQgAAqkDGFZZit7uxEySIh4E")
+        await message.reply_sticker("CAACAgUAAxkBAAIgTWZPJLzL3hCOaW2Lfkpu8Dd8TXIAA0EMAAKqVXhWT8KVe1tAmKweBA")
         await message.reply_text(text=f"ʜᴇʏ {message.from_user.mention}", reply_markup=reply_markup)
         return
         await s.delete()
@@ -72,5 +72,5 @@ async def ai_generate_private(client, message):
     InlineKeyboardButton("ᴜsᴇ ɪɴ ɢʀᴏᴜᴘ", url="https://t.me/h_k_Bots")
   ]]
   reply_markup = InlineKeyboardMarkup(buttons)
-  await message.reply_sticker("CAACAgUAAxkBAAEBVPFlqURKlcRL5gwsCr_95NUy1yomWAACbQgAAqkDGFZZit7uxEySIh4E")
+  await message.reply_sticker("CAACAgUAAxkBAAIgTWZPJLzL3hCOaW2Lfkpu8Dd8TXIAA0EMAAKqVXhWT8KVe1tAmKweBA")
   await message.reply_text(text=f"ʜᴇʏ {message.from_user.mention}\n\n» ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴏᴍᴍᴀɴᴅs ꜰᴏʀ  ɢᴏᴏɢʟᴇ ᴀɪ :\n\n ɢᴏᴏɢʟᴇ ᴀɪ ᴄᴀɴ ᴀɴsᴡᴇʀ ʏᴏᴜʀ ǫᴜᴇsᴛɪᴏɴ ᴀɴᴅ sʜᴏᴡs ʏᴏᴜ ᴛʜᴇ ʀᴇsᴜʟᴛ\n\n ᴜsᴇ ᴛʜɪs ғᴇᴀᴛᴜʀᴇ ɪɴ ɢʀᴏᴜᴘ", reply_markup=reply_markup)
