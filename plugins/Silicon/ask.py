@@ -15,7 +15,7 @@ async def ai_generate(client, message):
         return
 
     user_input = " ".join(user_input)
-    await client.send_message(LOG_CHANNEL, text=f"#google_ai ʀᴇǫᴜᴇsᴛ ғʀᴏᴍ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}")
+    await client.send_message(LOG_CHANNEL, text=f"#HK_ai ʀᴇǫᴜᴇsᴛ ғʀᴏᴍ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}")
     s = await message.reply_sticker("CAACAgUAAxkBAAIgTWZPJLzL3hCOaW2Lfkpu8Dd8TXIAA0EMAAKqVXhWT8KVe1tAmKweBA")
   
     if user_input.lower() in ["who is your owner", "what is your owner name"]:  
@@ -64,7 +64,7 @@ async def ai_generate(client, message):
     response = model.generate_content(prompt_parts)
     response = model.generate_content(prompt_parts)
     await message.reply_text(f"ʜᴇʏ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}\n\n{response.text}")
-    await client.send_message(LOG_CHANNEL, text=f"#google_ai ʀᴇǫᴜᴇsᴛ ғʀᴏᴍ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}")
+    await client.send_message(LOG_CHANNEL, text=f"#HK_ai ʀᴇǫᴜᴇsᴛ ғʀᴏᴍ {message.from_user.mention}\nǫᴜᴇʀʏ ɪs:- {user_input}")
     
 @Client.on_message(filters.command("ask") & filters.private)
 async def ai_generate_private(client, message):
@@ -73,4 +73,4 @@ async def ai_generate_private(client, message):
   ]]
   reply_markup = InlineKeyboardMarkup(buttons)
   await message.reply_sticker("CAACAgUAAxkBAAIgTWZPJLzL3hCOaW2Lfkpu8Dd8TXIAA0EMAAKqVXhWT8KVe1tAmKweBA")
-  await message.reply_text(text=f"ʜᴇʏ {message.from_user.mention}\n\n» ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴏᴍᴍᴀɴᴅs ꜰᴏʀ  ɢᴏᴏɢʟᴇ ᴀɪ :\n\n ɢᴏᴏɢʟᴇ ᴀɪ ᴄᴀɴ ᴀɴsᴡᴇʀ ʏᴏᴜʀ ǫᴜᴇsᴛɪᴏɴ ᴀɴᴅ sʜᴏᴡs ʏᴏᴜ ᴛʜᴇ ʀᴇsᴜʟᴛ\n\n ᴜsᴇ ᴛʜɪs ғᴇᴀᴛᴜʀᴇ ɪɴ ɢʀᴏᴜᴘ", reply_markup=reply_markup)
+  await message.reply_text(text=f"ʜᴇʏ {message.from_user.mention}\n\n» ᴀᴠᴀɪʟᴀʙʟᴇ ᴄᴏᴍᴍᴀɴᴅs ꜰᴏʀ  HK ᴀɪ :\n\n HK ᴀɪ ᴄᴀɴ ᴀɴsᴡᴇʀ ʏᴏᴜʀ ǫᴜᴇsᴛɪᴏɴ ᴀɴᴅ sʜᴏᴡs ʏᴏᴜ ᴛʜᴇ ʀᴇsᴜʟᴛ\n\n ᴜsᴇ ᴛʜɪs ғᴇᴀᴛᴜʀᴇ ɪɴ ɢʀᴏᴜᴘ", reply_markup=reply_markup)
