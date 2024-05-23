@@ -16,7 +16,7 @@ async def share_text(client, message):
         await message.reply_text(
             text=f"**Notice:**\n\n1. Reply Any Messages.\n2. No Media Support\n\n**Any Question Join Support Chat**",                
             reply_to_message_id=reply_id,               
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("ᴜᴘᴅᴀᴛᴇs", url=f"https://t.me/silicon_botz")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("ᴜᴘᴅᴀᴛᴇs", url=f"https://t.me/main_movie_hub")]])
             )                                                   
         return
     await message.reply_text(
