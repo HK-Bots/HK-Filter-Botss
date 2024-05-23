@@ -15,7 +15,7 @@ OWLY_API = os.environ.get("OWLY_API", None)
 BUTTONS = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton(text='⚙ Join Updates Channel ⚙', url='https://telegram.me/team_netflix')
+            InlineKeyboardButton(text='⚙ Join Updates Channel ⚙', url='https://telegram.me/main_movie_hub')
         ]
     ]
 )
