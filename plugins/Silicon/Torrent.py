@@ -8,7 +8,7 @@ async def google_text(client, message):
     try:
         user_query = message.text.split()[1:]
         if not user_query:
-            await message.reply_text("please provide a movie name, <code>/torent your name</code>")
+            await message.reply_text("please provide a movie name, <code>/torrent your name</code>")
             return 
         encoded_query = " ".join(user_query).replace(" ", "")
 
