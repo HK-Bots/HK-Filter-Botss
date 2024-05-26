@@ -72,7 +72,7 @@ async def start(client, message):
                     InlineKeyboardButton('☆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ☆', url=f'http://telegram.me/{temp.U_NAME}?startgroup=true')
                 ],[
                     InlineKeyboardButton('💸 Eᴀʀɴ Mᴏɴᴇʏ ', callback_data="shortlink_info"),
-                    InlineKeyboardButton('🍁 Uᴘᴅᴀᴛᴇꜱ ', callback_data='channels')
+                    InlineKeyboardButton('🍁 Uᴘᴅᴀᴛᴇꜱ ', url='https://t.me/main_movie_hub')
                 ],[
                     InlineKeyboardButton('⚠️ Hᴇʟᴘ', callback_data='main'),
                     InlineKeyboardButton('🔰 Aʙᴏᴜᴛ', callback_data='about')
@@ -144,7 +144,7 @@ async def start(client, message):
                     InlineKeyboardButton('☆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ☆', url=f'http://telegram.me/{temp.U_NAME}?startgroup=true')
                 ],[
                     InlineKeyboardButton('💸 Eᴀʀɴ Mᴏɴᴇʏ ', callback_data="shortlink_info"),
-                    InlineKeyboardButton('🍁 Uᴘᴅᴀᴛᴇꜱ ', callback_data='channels')
+                    InlineKeyboardButton('🍁 Uᴘᴅᴀᴛᴇꜱ ', url='https://t.me/main_movie_hub')
                 ],[
                     InlineKeyboardButton('⚠️ Hᴇʟᴘ', callback_data='main'),
                     InlineKeyboardButton('🔰 Aʙᴏᴜᴛ', callback_data='about')
