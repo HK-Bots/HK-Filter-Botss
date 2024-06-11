@@ -3263,80 +3263,67 @@ async def auto_filter(client, msg, spoll=False):
 
 
 # I had analyse this code there is no errors and difference (ᴄʜᴇᴄᴋᴇᴅ)
-async def advantage_spell_chok(client, name, msg, reply_msg, silicon_search):
+async def advantage_spell_chok(client, name, msg, reply_msg, vj_search):
     mv_id = msg.id
-    
-    pattern = (
-        r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|"
-        r"((send|snd|giv(e)?|gib)(\sme)?)|"
-        r"movie(s)?|new|latest|br((o|u)h?)*|^h(e|a)?(l)*(o)*|"
-        r"mal(ayalam)?|t(h)?amil|file|that|find|und(o)*|"
-        r"kit(t(i|y)?)?o(w)?|thar(u)?(o)*w?|kittum(o)*|"
-        r"aya(k)*(um(o)*)?|full\smovie|any(one)|with\ssubtitle(s)?)"
-    )
-
-    query = msg.text.strip() + " movie"
-    movies = await get_poster(query, bulk=True)
-    reqst_gle = query.replace(" ", "+")
-
-    if not movies:
-        await client.send_message(
-            chat_id=LOG_CHANNEL,
-            text=script.NORSLTS.format(msg.from_user.id, msg.from_user.mention, query)
-        )
-        button = [
-            [InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")]
-        ]
-        k = await reply_msg.edit_text(
-            text=script.I_CUDNT.format(query), 
-            reply_markup=InlineKeyboardMarkup(button)
-        )
-        await asyncio.sleep(30)
-        return
-
-    movielist = [movie.get('title') for movie in movies]
-    SPELL_CHECK[mv_id] = movielist
-
-    if AI_SPELL_CHECK == True:
-        silicon_ai_msg = await reply_msg.edit_text("⚡️𝘼𝙘𝙩𝙞𝙫𝙚 𝘼𝙙𝙫𝙖𝙣𝙘𝙚 𝙎𝙥𝙚𝙡𝙡 𝘾𝙝𝙚𝙘𝙠⚡️")
-        movienamelist = [movie.get('title') for movie in movies]
-        
-        for silicon in movienamelist:
-            try:
-                query = query.capitalize()
-            except Exception as e:
-                pass
-            if query.startswith(silicon[0]):
-                await auto_filter(client, silicon, msg, reply_msg, silicon_search_new)
-                break
-        
-        reqst_gle = query.replace(" ", "+")
+    mv_rqst = name
+    reqstr1 = msg.from_user.id if msg.from_user else 0
+    reqstr = await client.get_users(reqstr1)
+    settings = await get_settings(msg.chat.id)
+    query = re.sub(
+        r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|((send|snd|giv(e)?|gib)(\sme)?)|movie(s)?|new|latest|br((o|u)h?)*|^h(e|a)?(l)*(o)*|mal(ayalam)?|t(h)?amil|file|that|find|und(o)*|kit(t(i|y)?)?o(w)?|thar(u)?(o)*w?|kittum(o)*|aya(k)*(um(o)*)?|full\smovie|any(one)|with\ssubtitle(s)?)",
+        "", msg.text, flags=re.IGNORECASE)  # plis contribute some common words
+    query = query.strip() + " movie"
+    try:
+        movies = await get_poster(mv_rqst, bulk=True)
+    except Exception as e:
+        logger.exception(e)
+        reqst_gle = mv_rqst.replace(" ", "+")
         button = [[
             InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")
         ]]
         if NO_RESULTS_MSG:
-            await client.send_message(
-                chat_id=LOG_CHANNEL,
-                text=script.NORSLTS.format(msg.from_user.id, msg.from_user.mention, query)
-            )
-        k = await reply_msg.edit_text(
-            text=script.I_CUDNT.format(query),
-            reply_markup=InlineKeyboardMarkup(button)
-        )
+            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
+        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+        await asyncio.sleep(30)
         await k.delete()
         return
+    movielist = []
+    if not movies:
+        reqst_gle = mv_rqst.replace(" ", "+")
+        button = [[
+            InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")
+        ]]
+        if NO_RESULTS_MSG:
+            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
+        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+        await asyncio.sleep(30)
+        await k.delete()
+        return
+    movielist += [movie.get('title') for movie in movies]
+    movielist += [f"{movie.get('title')} {movie.get('year')}" for movie in movies]
+    SPELL_CHECK[mv_id] = movielist
+    if AI_SPELL_CHECK == True and vj_search == True:
+        vj_search_new = False
+        vj_ai_msg = await reply_msg.edit_text("<b><i>Advance Ai Try To Find Your Movie With Your Wrong Spelling.</i></b>")
+        movienamelist = []
+        movienamelist += [movie.get('title') for movie in movies]
+        for techvj in movienamelist:
+            if mv_rqst.startswith(techvj[0]):
+                await auto_filter(client, techvj, msg, reply_msg, vj_search_new)
+                break
     else:
         btn = [
             [
                 InlineKeyboardButton(
                     text=movie_name.strip(),
-                    callback_data=f"spol#{msg.from_user.id}#{mv_id}"
-                ) for movie_name in movielist
+                    callback_data=f"spol#{reqstr1}#{k}",
+                )
             ]
+            for k, movie_name in enumerate(movielist)
         ]
-        btn.append([InlineKeyboardButton(text="Close", callback_data=f'spol#{msg.from_user.id}#close_spellcheck')])
+        btn.append([InlineKeyboardButton(text="Close", callback_data=f'spol#{reqstr1}#close_spellcheck')])
         spell_check_del = await reply_msg.edit_text(
-            text=script.CUDNT_FND.format(query),
+            text=script.CUDNT_FND.format(mv_rqst),
             reply_markup=InlineKeyboardMarkup(btn)
         )
         try:
