@@ -1,30 +1,13 @@
-import random
 from pyrogram import Client, filters
-import requests
+import random
+from imdb import IMDb
 
-# OMDb API configuration
-OMDB_API_KEY = 'http://www.omdbapi.com/?i=tt3896198&apikey=55be1c7d'
-OMDB_BASE_URL = 'http://www.omdbapi.com/'
-
-# Function to fetch a random movie suggestion from OMDb API
-def get_random_movie():
-    params = {
-        'apikey': OMDB_API_KEY,
-        'type': 'movie',
-        'r': 'json',
-        'page': random.randint(1, 100)  # Adjust page range as needed
-    }
-    response = requests.get(OMDB_BASE_URL, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        random_movie = random.choice(data['Search'])
-        return random_movie['Title']
-    else:
-        return None
+# Create an instance of the IMDb class
+ia = IMDb()
 
 @Client.on_message(filters.command("suggestmovie"))
 async def suggest_movie(client, message):
-    # Fetch a random movie suggestion from OMDb API
+    # Fetch a random movie suggestion from IMDb
     random_movie = get_random_movie()
     
     if random_movie:
@@ -34,4 +17,14 @@ async def suggest_movie(client, message):
         # Reply if failed to fetch movie suggestion
         await message.reply_text("Failed to fetch movie suggestion. Please try again later.")
 
+def get_random_movie():
+    try:
+        # Get a random movie
+        movie_id = random.randint(1, 1000000)  # Adjust the range as needed
+        movie = ia.get_movie(movie_id)
+        return movie['title']
+    except Exception as e:
+        print(f"Error fetching movie: {e}")
+        return None
 
+# Run the client
