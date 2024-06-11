@@ -5,9 +5,12 @@ from imdb import IMDb
 # Create an instance of the IMDb class
 ia = IMDb()
 
+# Fetch top 250 movies
+top_250_movies = ia.get_top250_movies()
+
 @Client.on_message(filters.command("suggestmovie"))
 async def suggest_movie(client, message):
-    # Fetch a random movie suggestion from IMDb
+    # Fetch a random movie suggestion from the top 250 list
     random_movie = get_random_movie()
     
     if random_movie:
@@ -19,12 +22,9 @@ async def suggest_movie(client, message):
 
 def get_random_movie():
     try:
-        # Get a random movie
-        movie_id = random.randint(1, 1000000)  # Adjust the range as needed
-        movie = ia.get_movie(movie_id)
+        # Select a random movie from the top 250 list
+        movie = random.choice(top_250_movies)
         return movie['title']
     except Exception as e:
         print(f"Error fetching movie: {e}")
         return None
-
-# Run the client
