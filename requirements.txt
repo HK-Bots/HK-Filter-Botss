@@ -118,7 +118,7 @@ googletrans
 lexica-api
 SpeechRecognition
 gitpython
-  
+imdbpy
 
 
   
