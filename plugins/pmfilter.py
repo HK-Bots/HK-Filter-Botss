@@ -3316,7 +3316,7 @@ async def advantage_spell_chok(client, name, msg, reply_msg, silicon_search):
             if settings['auto_delete']:
                 await asyncio.sleep(600)
         except KeyError:
-            grpid = await active_connection(str(msg.from_user.id
+            grpid = await active_connection(str(msg.from_user.id))
                 await save_group_settings(grpid, 'auto_delete', True)
             settings = await get_settings(msg.chat.id)
             if settings['auto_delete']:
