@@ -52,6 +52,8 @@ PREFIX = environ.get("PREFIX", "/")
 # for eval function, work only in a specific group
 EVAL_ID = environ.get("EVAL_ID", "-1001685231216")
 
+# Ai spelling check
+AI_SPELL_CHECK = bool(environ.get('AI_SPELL_CHECK', True))
 
 # Admins, Channels & Users
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '1240066432').split()]
