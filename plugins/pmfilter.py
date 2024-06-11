@@ -3297,7 +3297,7 @@ async def advantage_spell_chok(client, name, msg, reply_msg, silicon_search):
     movielist = [movie.get('title') for movie in movies]
     SPELL_CHECK[mv_id] = movielist
 
-    if AI_SPELL_CHECK == True and silicon_search == True:
+    if AI_SPELL_CHECK == True:
         silicon_ai_msg = await reply_msg.edit_text("⚡️𝘼𝙘𝙩𝙞𝙫𝙚 𝘼𝙙𝙫𝙖𝙣𝙘𝙚 𝙎𝙥𝙚𝙡𝙡 𝘾𝙝𝙚𝙘𝙠⚡️")
         movienamelist = [movie.get('title') for movie in movies]
         
