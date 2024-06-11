@@ -3265,38 +3265,64 @@ async def auto_filter(client, msg, spoll=False):
 # I had analyse this code there is no errors and difference (ᴄʜᴇᴄᴋᴇᴅ)
 async def advantage_spell_chok(client, name, msg, reply_msg, silicon_search):
     mv_id = msg.id
-        r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|((send|snd|giv(e)?|gib)(\sme)?)|movie(s)?|new|latest|br((o|u)h?)*|^h(e|a)?(l)*(o)*|mal(ayalam)?|t(h)?amil|file|that|find|und(o)*|kit(t(i|y)?)?o(w)?|thar(u)?(o)*w?|kittum(o)*|aya(k)*(um(o)*)?|full\smovie|any(one)|with\ssubtitle(s)?)",
-    query = query.strip() + " movie"
-        movies = await get_poster(mv_rqst, bulk=True)
-        reqst_gle = mv_rqst.replace(" ", "+")
-            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+    
+    pattern = (
+        r"\b(pl(i|e)*?(s|z+|ease|se|ese|(e+)s(e)?)|"
+        r"((send|snd|giv(e)?|gib)(\sme)?)|"
+        r"movie(s)?|new|latest|br((o|u)h?)*|^h(e|a)?(l)*(o)*|"
+        r"mal(ayalam)?|t(h)?amil|file|that|find|und(o)*|"
+        r"kit(t(i|y)?)?o(w)?|thar(u)?(o)*w?|kittum(o)*|"
+        r"aya(k)*(um(o)*)?|full\smovie|any(one)|with\ssubtitle(s)?)"
+    )
+
+    query = msg.text.strip() + " movie"
+    movies = await get_poster(query, bulk=True)
+    reqst_gle = query.replace(" ", "+")
+
+    if not movies:
+        await client.send_message(
+            chat_id=LOG_CHANNEL,
+            text=script.NORSLTS.format(msg.from_user.id, msg.from_user.mention, query)
+        )
+        button = [
+            [InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")]
+        ]
+        k = await reply_msg.edit_text(
+            text=script.I_CUDNT.format(query), 
+            reply_markup=InlineKeyboardMarkup(button)
+        )
         await asyncio.sleep(30)
-    movielist = []
-        button = [[
-            InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")
-            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
-    movielist += [movie.get('title') for movie in movies]
+        return
+
+    movielist = [movie.get('title') for movie in movies]
     SPELL_CHECK[mv_id] = movielist
+
     if AI_SPELL_CHECK == True and silicon_search == True:
         silicon_ai_msg = await reply_msg.edit_text("⚡️𝘼𝙘𝙩𝙞𝙫𝙚 𝘼𝙙𝙫𝙖𝙣𝙘𝙚 𝙎𝙥𝙚𝙡𝙡 𝘾𝙝𝙚𝙘𝙠⚡️")
-        movienamelist += [movie.get('title') for movie in movies]
+        movienamelist = [movie.get('title') for movie in movies]
+        
         for silicon in movienamelist:
             try:
-                mv_rqst = mv_rqst.capitalize()
-            except:
+                query = query.capitalize()
+            except Exception as e:
                 pass
-            if mv_rqst.startswith(silicon[0]):
+            if query.startswith(silicon[0]):
                 await auto_filter(client, silicon, msg, reply_msg, silicon_search_new)
                 break
-        reqst_gle = mv_rqst.replace(" ", "+")
+        
+        reqst_gle = query.replace(" ", "+")
         button = [[
             InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")
         ]]
         if NO_RESULTS_MSG:
-            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+            await client.send_message(
+                chat_id=LOG_CHANNEL,
+                text=script.NORSLTS.format(msg.from_user.id, msg.from_user.mention, query)
+            )
+        k = await reply_msg.edit_text(
+            text=script.I_CUDNT.format(query),
+            reply_markup=InlineKeyboardMarkup(button)
+        )
         await k.delete()
         return
     else:
@@ -3304,20 +3330,22 @@ async def advantage_spell_chok(client, name, msg, reply_msg, silicon_search):
             [
                 InlineKeyboardButton(
                     text=movie_name.strip(),
-                    callback_data=f"spol#{reqstr1}#{k}",
+                    callback_data=f"spol#{msg.from_user.id}#{mv_id}"
+                ) for movie_name in movielist
             ]
         ]
-        btn.append([InlineKeyboardButton(text="Close", callback_data=f'spol#{reqstr1}#close_spellcheck')])
+        btn.append([InlineKeyboardButton(text="Close", callback_data=f'spol#{msg.from_user.id}#close_spellcheck')])
         spell_check_del = await reply_msg.edit_text(
-            text=script.CUDNT_FND.format(mv_rqst),
+            text=script.CUDNT_FND.format(query),
             reply_markup=InlineKeyboardMarkup(btn)
         )
         try:
             if settings['auto_delete']:
                 await asyncio.sleep(600)
+                await spell_check_del.delete()
         except KeyError:
             grpid = await active_connection(str(msg.from_user.id))
-                await save_group_settings(grpid, 'auto_delete', True)
+            await save_group_settings(grpid, 'auto_delete', True)
             settings = await get_settings(msg.chat.id)
             if settings['auto_delete']:
                 await asyncio.sleep(600)
