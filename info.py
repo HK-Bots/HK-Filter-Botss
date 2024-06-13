@@ -43,7 +43,7 @@ REFER_PICS = (environ.get("REFER_PICS", "https://graph.org/file/1a2e64aee3d4d10e
 #stream link shortner
 STREAM_SITE = (environ.get('STREAM_SITE', 'upshrink.com'))
 STREAM_API = (environ.get('STREAM_API', 'ffb1b16a5cc0396ee306d67bfcea3dbf9da5dcbd'))
-STREAMHTO = (environ.get('STREAMHTO', 'https://t.me/HowToOpenLinkHP/69'))
+STREAMHTO = (environ.get('STREAMHTO', 'https://t.me/main_movie_hub/47'))
 
 # Command
 COMMAND_HAND_LER = environ.get("COMMAND_HAND_LER", "/")
