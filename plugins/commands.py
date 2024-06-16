@@ -19,7 +19,7 @@ import re, asyncio, os, sys
 import json
 import base64
 logger = logging.getLogger(__name__)
-
+EMOJIS = ['😀', '😂', '😅', '😍', '😎', '🎉', '🌟', '🔥', '🚀']
 TIMEZONE = "Asia/Kolkata"
 BATCH_FILES = {}
 
