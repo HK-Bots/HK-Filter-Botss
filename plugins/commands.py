@@ -19,13 +19,11 @@ import re, asyncio, os, sys
 import json
 import base64
 logger = logging.getLogger(__name__)
-EMOJIS = ['😀', '😂', '😅', '😍', '😎', '🎉', '🌟', '🔥', '🚀']
 TIMEZONE = "Asia/Kolkata"
 BATCH_FILES = {}
 
 @Client.on_message(filters.command("gsend") & filters.user(ADMINS))
 async def send_chatmsg(bot, message):
-    await message.react(choice(EMOJIS), big=True)
     if message.reply_to_message:
         target_id = message.text
         command = ["/gsend"]
@@ -48,7 +46,7 @@ async def send_chatmsg(bot, message):
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
-    await message.react(choice(EMOJIS), big=True)
+    
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [[
                     InlineKeyboardButton('• ᴀᴅᴅ ᴍᴇ ᴛᴏ ᴜʀ ᴄʜᴀᴛ •', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
@@ -648,7 +646,6 @@ async def start(client, message):
 
 @Client.on_message(filters.command('channel') & filters.user(ADMINS))
 async def channel_info(bot, message):
-           
     """Send basic information of channel"""
     if isinstance(CHANNELS, (int, str)):
         channels = [CHANNELS]
@@ -687,7 +684,6 @@ async def log_file(bot, message):
 
 @Client.on_message(filters.command('delete') & filters.user(ADMINS))
 async def delete(bot, message):
-    await message.react(choice(EMOJIS), big=True)
     """Delete file from database"""
     reply = message.reply_to_message
     if reply and reply.media:
@@ -736,7 +732,6 @@ async def delete(bot, message):
 
 @Client.on_message(filters.command('deleteall') & filters.user(ADMINS))
 async def delete_all_index(bot, message):
-    await message.react(choice(EMOJIS), big=True)
     await message.reply_text(
         'ᴛʜɪꜱ ᴡɪʟʟ ᴅᴇʟᴇᴛᴇ ᴀʟʟ ʏᴏᴜʀ ɪɴᴅᴇxᴇᴅ ꜰɪʟᴇꜱ !\nᴅᴏ ʏᴏᴜ ꜱᴛɪʟʟ ᴡᴀɴᴛ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ ?',
         reply_markup=InlineKeyboardMarkup(
@@ -995,7 +990,6 @@ async def save_template(client, message):
 
 @Client.on_message((filters.command(["request", "Request"]) | filters.regex("#request") | filters.regex("#Request")) & filters.group)
 async def requests(bot, message):
-    await message.react(choice(EMOJIS), big=True)
     if REQST_CHANNEL is None or SUPPORT_CHAT_ID is None: return # Must add REQST_CHANNEL and SUPPORT_CHAT_ID to use this feature
     if message.reply_to_message and SUPPORT_CHAT_ID == message.chat.id:
         chat_id = message.chat.id
@@ -1289,7 +1283,6 @@ async def ginfo(bot, message):
 
 @Client.on_message(filters.command("donate"))
 async def donate_command(client, message):
-    await message.react(choice(EMOJIS), big=True)
     buttons = [
         [
             InlineKeyboardButton("• ᴅᴏɴᴀᴛᴇ • ", url="https://telegra.ph/file/4b03623b71b0215b58123.png"),
@@ -1301,7 +1294,6 @@ async def donate_command(client, message):
 
 @Client.on_message(filters.command("help"))
 async def help_command(client, message):
-    await message.react(choice(EMOJIS), big=True)
     buttons = [
         [
             InlineKeyboardButton("• ᴏᴘᴇɴ ɪɴ ᴘʀɪᴠᴀᴛᴇ •", url="https://t.me/{bot.me.username}?start=help"),
@@ -1312,7 +1304,6 @@ async def help_command(client, message):
 
 @Client.on_message(filters.command("support"))
 async def support_command(client, message):
-    await message.react(choice(EMOJIS), big=True)
     buttons = [
         [
             InlineKeyboardButton("sᴜᴘᴘᴏʀᴛ", url="https://t.me/moviehubsearchgroup"),
@@ -1384,7 +1375,6 @@ async def stop_button(bot, message):
 
 @Client.on_message(filters.command("refer"))
 async def refer(bot, message):
-    await message.react(choice(EMOJIS), big=True)
     btn = [[
         InlineKeyboardButton('Iɴᴠɪᴛᴇ ʟɪɴᴋ', url=f'https://telegram.me/share/url?url=https://t.me/{bot.me.username}?start=reff_{message.from_user.id}&text=Hᴇʟʟᴏ%21%20Exᴘᴇʀɪᴇɴᴄᴇ%20ᴀ%20Bᴏᴛ%20Tʜᴀᴛ%20Oғғᴇʀs%20a%20ᴠᴀsᴛ%20Lɪʙʀᴀʀʏ%20ᴏғ%20Uɴʟɪᴍᴛᴇᴅ%20Mᴏᴠɪᴇs%20and%20Sᴇʀɪᴇs.%20%F0%9F%98%83'),
         InlineKeyboardButton(f'⏳ {referdb.get_refer_points(message.from_user.id)}', callback_data='ref_point'),
