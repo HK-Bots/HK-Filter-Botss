@@ -247,7 +247,13 @@ Hᴇʟᴘ : <b>Sᴇᴛᴛɪɴɢꜱ</b>
 /𝐬𝐭𝐢𝐜𝐤𝐞𝐫𝐢𝐝 𝐬𝐭𝐢𝐜𝐤𝐞𝐫 𝐢𝐝
 
 </b>"""
- 
+
+    INDEX_FILE_TXT = """ #NEW_MOVIE_UPLODED
+
+MOVIE NAME = <code>{}</code>
+
+MOVIE YEAR = {}"""
+
     STATUS_TXT = """<b>
 ‣ ᴛᴏᴛᴀʟ ꜰɪʟᴇs: <code>{}</code>
 ‣ ᴛᴏᴛᴀʟ ᴜsᴇʀs: <code>{}</code>
