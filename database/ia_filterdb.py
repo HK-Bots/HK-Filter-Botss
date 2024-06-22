@@ -9,6 +9,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from marshmallow.exceptions import ValidationError
 from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN
 from utils import get_settings, save_group_settings
+from Script import script
+from info import FILE_UPDATE_CHANNEL, 
+def clean_file_name(file_name):
+    file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
+    file_name = file_name.replace("_", " ")
+    file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file_name.split()))
+    return file_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -64,6 +71,28 @@ async def save_file(media):
         else:
             logger.info(f'{getattr(media, "file_name", "NO_FILE")} is saved to database')
             return True, 1
+            file_name = clean_file_name(media.file_name)    
+            match = re.search(r"^(.+?)[\s\.-](\d{4})", file_name, re.IGNORECASE)
+            movie_name = match.group(1) if match else file_name
+            processed_movie = await mydb[COLLECTION_NAME].find_one({"movie_name": {"$regex": movie_name, "$options": "i"}})
+            if processed_movie:
+                print(f'{movie_name} has already been processed')
+                return 'dup'
+            await mydb[COLLECTION_NAME].insert_one({"movie_name": movie_name})           
+            year = match.group(2) if match else "Unknown Year"
+            if media.file_size < 1073741824:
+                size = f"{media.file_size / 1048576:.2f} MB"
+            else:
+                size = f"{media.file_size / 1073741824:.2f} GB"
+            buttons = [[
+            InlineKeyboardButton('🔍 ꜱᴇᴀʀᴄʜ ᴛʜɪꜱ ᴍᴏᴠɪᴇ ʜᴇʀᴇ', url=MOVIE_GROUP_LINK)
+            ]]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            await client.send_message(
+                chat_id=LOG_CHANNEL,
+                text=script.INDEX_FILE_TXT.format(movie_name, year, size),
+                reply_markup=reply_markup)
+            return 'suc'
 
 
 
