@@ -10,7 +10,7 @@ from marshmallow.exceptions import ValidationError
 from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN
 from utils import get_settings, save_group_settings
 from Script import script
-from info import FILE_UPDATE_CHANNEL 
+from info import FILE_UPDATE_CHANNEL,MOVIE_GROUP_LINK 
 def clean_file_name(file_name):
     file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
     file_name = file_name.replace("_", " ")
