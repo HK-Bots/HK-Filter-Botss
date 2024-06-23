@@ -50,8 +50,11 @@ async def save_file(media):
             mime_type=media.mime_type,
             caption=media.caption.html if media.caption else None,
         )
-    except ValidationError:
-        logger.exception('Error occurred while saving file in database')
+    except ValidationError as e:
+        logger.exception(f'ValidationError occurred while saving file in database: {e.messages}')
+        return False, 2
+    except Exception as e:
+        logger.exception(f'Unexpected error occurred while saving file in database: {str(e)}')
         return False, 2
     else:
         try:
@@ -59,6 +62,9 @@ async def save_file(media):
         except DuplicateKeyError:
             logger.warning(f'{file_name} is already saved in database')
             return 'dup'
+        except Exception as e:
+            logger.exception(f'Unexpected error occurred while committing file to database: {str(e)}')
+            return False, 2
         else:
             logger.info(f'{file_name} is saved to database')
 
@@ -78,10 +84,13 @@ async def save_file(media):
                 InlineKeyboardButton('🔍 ꜱᴇᴀʀᴄʜ ᴛʜɪꜱ ᴍᴏᴠɪᴇ ʜᴇʀᴇ', url=MOVIE_GROUP_LINK)
             ]]
             reply_markup = InlineKeyboardMarkup(buttons)
-            await client.send_message(
-                chat_id=FILE_UPDATE_CHANNEL,
-                text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
-                reply_markup=reply_markup)
+            try:
+                await client.send_message(
+                    chat_id=FILE_UPDATE_CHANNEL,
+                    text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
+                    reply_markup=reply_markup)
+            except Exception as e:
+                logger.exception(f'Error occurred while sending message: {str(e)}')
             return 'suc'
 
 async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0):
@@ -111,7 +120,8 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except:
+    except re.error as e:
+        logger.exception(f'Regex compilation error: {str(e)}')
         return []
 
     if USE_CAPTION_FILTER:
@@ -122,7 +132,12 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     if file_type:
         filter['file_type'] = file_type
 
-    total_results = await Media.count_documents(filter)
+    try:
+        total_results = await Media.count_documents(filter)
+    except Exception as e:
+        logger.exception(f'Error occurred while counting documents: {str(e)}')
+        return []
+
     next_offset = offset + max_results
 
     if next_offset > total_results:
@@ -131,7 +146,11 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     cursor = Media.find(filter)
     cursor.sort('$natural', -1)
     cursor.skip(offset).limit(max_results)
-    files = await cursor.to_list(length=max_results)
+    try:
+        files = await cursor.to_list(length=max_results)
+    except Exception as e:
+        logger.exception(f'Error occurred while fetching documents: {str(e)}')
+        return []
 
     return files, next_offset, total_results
 
@@ -147,7 +166,8 @@ async def get_bad_files(query, file_type=None):
     
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except:
+    except re.error as e:
+        logger.exception(f'Regex compilation error: {str(e)}')
         return []
 
     if USE_CAPTION_FILTER:
@@ -158,18 +178,30 @@ async def get_bad_files(query, file_type=None):
     if file_type:
         filter['file_type'] = file_type
 
-    total_results = await Media.count_documents(filter)
+    try:
+        total_results = await Media.count_documents(filter)
+    except Exception as e:
+        logger.exception(f'Error occurred while counting documents: {str(e)}')
+        return []
 
     cursor = Media.find(filter)
     cursor.sort('$natural', -1)
-    files = await cursor.to_list(length=total_results)
+    try:
+        files = await cursor.to_list(length=total_results)
+    except Exception as e:
+        logger.exception(f'Error occurred while fetching documents: {str(e)}')
+        return []
 
     return files, total_results
 
 async def get_file_details(query):
     filter = {'file_id': query}
     cursor = Media.find(filter)
-    filedetails = await cursor.to_list(length=1)
+    try:
+        filedetails = await cursor.to_list(length=1)
+    except Exception as e:
+        logger.exception(f'Error occurred while fetching file details: {str(e)}')
+        return []
     return filedetails
 
 def encode_file_id(s: bytes) -> str:
@@ -193,17 +225,32 @@ def encode_file_ref(file_ref: bytes) -> str:
 
 def unpack_new_file_id(new_file_id):
     """Return file_id, file_ref"""
-    decoded = FileId.decode(new_file_id)
-    file_id = encode_file_id(
-        pack(
-            "<iiqq",
-            int(decoded.file_type),
-            decoded.dc_id,
-            decoded.media_id,
-            decoded.access_hash
+    try:
+        decoded = FileId.decode(new_file_id)
+    except Exception as e:
+        logger.exception(f'Error decoding file_id: {str(e)}')
+        return None, None
+
+    try:
+        file_id = encode_file_id(
+            pack(
+                "<iiqq",
+                int(decoded.file_type),
+                decoded.dc_id,
+                decoded.media_id,
+                decoded.access_hash
+            )
         )
-    )
-    file_ref = encode_file_ref(decoded.file_reference)
+    except Exception as e:
+        logger.exception(f'Error encoding file_id: {str(e)}')
+        return None, None
+
+    try:
+        file_ref = encode_file_ref(decoded.file_reference)
+    except Exception as e:
+        logger.exception(f'Error encoding file_ref: {str(e)}')
+        return file_id, None
+
     return file_id, file_ref
 
 def extract_year(file_name):
