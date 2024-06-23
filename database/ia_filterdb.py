@@ -7,13 +7,12 @@ from pymongo.errors import DuplicateKeyError
 from umongo import Instance, Document, fields
 from motor.motor_asyncio import AsyncIOMotorClient
 from marshmallow.exceptions import ValidationError
-from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN, MOVIE_GROUP_LINK, FILE_UPDATE_CHANNEL
+from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN
 from utils import get_settings, save_group_settings
-from Script import script
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 client = AsyncIOMotorClient(DATABASE_URI)
 db = client[DATABASE_NAME]
@@ -25,19 +24,19 @@ class Media(Document):
     file_ref = fields.StrField(allow_none=True)
     file_name = fields.StrField(required=True)
     file_size = fields.IntField(required=True)
+    file_type = fields.StrField(allow_none=True)
     mime_type = fields.StrField(allow_none=True)
     caption = fields.StrField(allow_none=True)
-    file_type = fields.StrField(allow_none=True)
 
     class Meta:
         indexes = ('$file_name', )
         collection_name = COLLECTION_NAME
 
-async def get_files_db_size():
-    return (await db.command("dbstats"))['dataSize']
 
 async def save_file(media):
     """Save file in database"""
+
+    # TODO: Find better way to get same file_id for same media to avoid duplicates
     file_id, file_ref = unpack_new_file_id(media.file_id)
     file_name = re.sub(r"(_|\-|\.|\+)", " ", str(media.file_name))
     try:
@@ -50,50 +49,25 @@ async def save_file(media):
             mime_type=media.mime_type,
             caption=media.caption.html if media.caption else None,
         )
-    except ValidationError as e:
-        logger.exception(f'ValidationError occurred while saving file in database: {e.messages}')
-        return False, 2
-    except Exception as e:
-        logger.exception(f'Unexpected error occurred while saving file in database: {str(e)}')
+    except ValidationError:
+        logger.exception('Error occurred while saving file in database')
         return False, 2
     else:
         try:
             await file.commit()
-        except DuplicateKeyError:
-            logger.warning(f'{file_name} is already saved in database')
-            return 'dup'
-        except Exception as e:
-            logger.exception(f'Unexpected error occurred while committing file to database: {str(e)}')
-            return False, 2
+        except DuplicateKeyError:      
+            logger.warning(
+                f'{getattr(media, "file_name", "NO_FILE")} is already saved in database'
+            )
+
+            return False, 0
         else:
-            logger.info(f'{file_name} is saved to database')
+            logger.info(f'{getattr(media, "file_name", "NO_FILE")} is saved to database')
+            return True, 1
 
-            movie_name = clean_file_name(media.file_name)            
-            year = extract_year(media.file_name)
-            language = extract_language(media.file_name)
-            processed_movie = await db[COLLECTION_NAME].find_one({"movie_name": movie_name})
-            if processed_movie:
-                logger.info(f'{movie_name} has already been processed')
-                return 'dup'
-            await db[COLLECTION_NAME].insert_one({"movie_name": movie_name})
-            if media.file_size < 1073741824:
-                size = f"{media.file_size / 1048576:.2f} MB"
-            else:
-                size = f"{media.file_size / 1073741824:.2f} GB"
-            buttons = [[
-                InlineKeyboardButton('🔍 ꜱᴇᴀʀᴄʜ ᴛʜɪꜱ ᴍᴏᴠɪᴇ ʜᴇʀᴇ', url=MOVIE_GROUP_LINK)
-            ]]
-            reply_markup = InlineKeyboardMarkup(buttons)
-            try:
-                await client.send_message(
-                    chat_id=FILE_UPDATE_CHANNEL,
-                    text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
-                    reply_markup=reply_markup)
-            except Exception as e:
-                logger.exception(f'Error occurred while sending message: {str(e)}')
-            return 'suc'
 
-async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0):
+
+async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0, filter=False):
     """For given query return (results, next_offset)"""
     if chat_id is not None:
         settings = await get_settings(int(chat_id))
@@ -109,8 +83,11 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
                 max_results = 10
             else:
                 max_results = int(MAX_B_TN)
-
     query = query.strip()
+    #if filter:
+        #better ?
+        #query = query.replace(' ', r'(\s|\.|\+|\-|_)')
+        #raw_pattern = r'(\s|_|\-|\.|\+)' + query + r'(\s|_|\-|\.|\+)'
     if not query:
         raw_pattern = '.'
     elif ' ' not in query:
@@ -120,8 +97,7 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except re.error as e:
-        logger.exception(f'Regex compilation error: {str(e)}')
+    except:
         return []
 
     if USE_CAPTION_FILTER:
@@ -132,31 +108,29 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
     if file_type:
         filter['file_type'] = file_type
 
-    try:
-        total_results = await Media.count_documents(filter)
-    except Exception as e:
-        logger.exception(f'Error occurred while counting documents: {str(e)}')
-        return []
-
+    total_results = await Media.count_documents(filter)
     next_offset = offset + max_results
 
     if next_offset > total_results:
         next_offset = ''
 
     cursor = Media.find(filter)
+    # Sort by recent
     cursor.sort('$natural', -1)
+    # Slice files according to offset and max results
     cursor.skip(offset).limit(max_results)
-    try:
-        files = await cursor.to_list(length=max_results)
-    except Exception as e:
-        logger.exception(f'Error occurred while fetching documents: {str(e)}')
-        return []
+    # Get list of files
+    files = await cursor.to_list(length=max_results)
 
     return files, next_offset, total_results
 
-async def get_bad_files(query, file_type=None):
+async def get_bad_files(query, file_type=None, filter=False):
     """For given query return (results, next_offset)"""
     query = query.strip()
+    #if filter:
+        #better ?
+        #query = query.replace(' ', r'(\s|\.|\+|\-|_)')
+        #raw_pattern = r'(\s|_|\-|\.|\+)' + query + r'(\s|_|\-|\.|\+)'
     if not query:
         raw_pattern = '.'
     elif ' ' not in query:
@@ -166,8 +140,7 @@ async def get_bad_files(query, file_type=None):
     
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except re.error as e:
-        logger.exception(f'Regex compilation error: {str(e)}')
+    except:
         return []
 
     if USE_CAPTION_FILTER:
@@ -178,31 +151,22 @@ async def get_bad_files(query, file_type=None):
     if file_type:
         filter['file_type'] = file_type
 
-    try:
-        total_results = await Media.count_documents(filter)
-    except Exception as e:
-        logger.exception(f'Error occurred while counting documents: {str(e)}')
-        return []
+    total_results = await Media.count_documents(filter)
 
     cursor = Media.find(filter)
+    # Sort by recent
     cursor.sort('$natural', -1)
-    try:
-        files = await cursor.to_list(length=total_results)
-    except Exception as e:
-        logger.exception(f'Error occurred while fetching documents: {str(e)}')
-        return []
+    # Get list of files
+    files = await cursor.to_list(length=total_results)
 
     return files, total_results
 
 async def get_file_details(query):
     filter = {'file_id': query}
     cursor = Media.find(filter)
-    try:
-        filedetails = await cursor.to_list(length=1)
-    except Exception as e:
-        logger.exception(f'Error occurred while fetching file details: {str(e)}')
-        return []
+    filedetails = await cursor.to_list(length=1)
     return filedetails
+
 
 def encode_file_id(s: bytes) -> str:
     r = b""
@@ -220,88 +184,22 @@ def encode_file_id(s: bytes) -> str:
 
     return base64.urlsafe_b64encode(r).decode().rstrip("=")
 
+
 def encode_file_ref(file_ref: bytes) -> str:
     return base64.urlsafe_b64encode(file_ref).decode().rstrip("=")
 
+
 def unpack_new_file_id(new_file_id):
     """Return file_id, file_ref"""
-    try:
-        decoded = FileId.decode(new_file_id)
-    except Exception as e:
-        logger.exception(f'Error decoding file_id: {str(e)}')
-        return None, None
-
-    try:
-        file_id = encode_file_id(
-            pack(
-                "<iiqq",
-                int(decoded.file_type),
-                decoded.dc_id,
-                decoded.media_id,
-                decoded.access_hash
-            )
+    decoded = FileId.decode(new_file_id)
+    file_id = encode_file_id(
+        pack(
+            "<iiqq",
+            int(decoded.file_type),
+            decoded.dc_id,
+            decoded.media_id,
+            decoded.access_hash
         )
-    except Exception as e:
-        logger.exception(f'Error encoding file_id: {str(e)}')
-        return None, None
-
-    try:
-        file_ref = encode_file_ref(decoded.file_reference)
-    except Exception as e:
-        logger.exception(f'Error encoding file_ref: {str(e)}')
-        return file_id, None
-
+    )
+    file_ref = encode_file_ref(decoded.file_reference)
     return file_id, file_ref
-
-def extract_year(file_name):
-    """Extracts the year from the file name."""
-    match = re.search(r'\b(19\d{2}|20\d{2})\b', file_name)
-    if match:
-        return match.group(1)
-    return None
-
-def extract_language(file_name):
-    """Extracts the language from the file name."""
-    language_patterns = [
-        r'\b(Hindi|English|Tamil|Telugu|Malayalam|Kannada)\b',
-    ]
-    for pattern in language_patterns:
-        match = re.search(pattern, file_name, re.IGNORECASE)
-        if match:
-            return match.group(1)
-    return None
-
-def clean_file_name(file_name):
-    file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
-    file_name = file_name.rsplit('.', 1)[0]
-    file_name = file_name.replace("_", " ")
-    file_name = file_name.replace('#', '')
-    file_name = file_name.replace('×', '')
-    file_name = re.sub(r'\b\d{4}\b', '', file_name)
-    language_codes = ['english', 'hindi', 'kannada', 'malayalam', 'tamil', 'telugu', 'bengali', 
-                       'marathi', 'gujarati', 'punjabi', 'urdu', 'french', 'spanish', 'german',
-                       'japanese', 'korean', 'chinese', 'russian', 'arabic', 'portuguese']
-    file_name = ' '.join(filter(
-        lambda x: not x.startswith(('[', '@', 'www.'))
-                  and not x.lower() in [
-                      '1080p', '2160p', '4k', '5k', '8k', '1440p', '2k', '480p', '360p', '720p', 
-                      'hd', 'fhd', 'qhd', 'uhd', 'sd', 'hdtv', 'webrip', 'bluray', 'blu-ray', 'brrip',
-                      'h264', 'h.264', 'h265', 'h.265', 'x264', 'x.264', 'x265', 'x.265', 'hevc', 
-                      'aac', 'ac3', 'dts', 'dts-hd', 'mp3', 'flac', 'opus', 
-                      'web-dl', 'webdl', 'dvdrip', 'dvd-rip', 'xvid', 'divx', 
-                      'hdr', 'hdr10', 'hdr10+', 'dolby vision', 'dv',
-                      'hdrip', 'hdts', 'camrip', 'cam', 'telesync', 'ts', 'tc',
-                      'esubs', 'esub', 'subtitles', 'subs',
-                      'avc', 'truehd', 'atmos', 'dd5.1', 'dd7.1',
-                      'hq', 'remastered', 'extended', 'unrated', 'director\'s cut', 
-                      'remux', 'encode', 'multi', 'dual audio', 'multi-audio',
-                      'predvd', 'pre-dvd', 'screener'
-                  ]
-                  and not x.lower() in language_codes
-                  and not x.lower().startswith(('x2', 'x'))
-                  and not x.isdigit(),  # Remove standalone numbers 
-        file_name.split()
-    ))
-    file_name = re.sub(r'[^\w\s]', '', file_name)
-    file_name = ' '.join(file_name.split())
-    return file_name
