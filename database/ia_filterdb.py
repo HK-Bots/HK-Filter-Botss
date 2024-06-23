@@ -7,17 +7,10 @@ from pymongo.errors import DuplicateKeyError
 from umongo import Instance, Document, fields
 from motor.motor_asyncio import AsyncIOMotorClient
 from marshmallow.exceptions import ValidationError
-from pyrogram import Client
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN, MOVIE_GROUP_LINK, FILE_UPDATE_CHANNEL
 from utils import get_settings, save_group_settings
 from Script import script
-from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN, FILE_UPDATE_CHANNEL, MOVIE_GROUP_LINK
-
-def clean_file_name(file_name):
-    file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
-    file_name = file_name.replace("_", " ")
-    file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file_name.split()))
-    return file_name
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,17 +25,19 @@ class Media(Document):
     file_ref = fields.StrField(allow_none=True)
     file_name = fields.StrField(required=True)
     file_size = fields.IntField(required=True)
-    file_type = fields.StrField(allow_none=True)
     mime_type = fields.StrField(allow_none=True)
     caption = fields.StrField(allow_none=True)
+    file_type = fields.StrField(allow_none=True)
 
     class Meta:
         indexes = ('$file_name', )
         collection_name = COLLECTION_NAME
 
-async def save_file(media, client: Client):
-    """Save file in database"""
+async def get_files_db_size():
+    return (await db.command("dbstats"))['dataSize']
 
+async def save_file(media):
+    """Save file in database"""
     file_id, file_ref = unpack_new_file_id(media.file_id)
     file_name = re.sub(r"(_|\-|\.|\+)", " ", str(media.file_name))
     try:
@@ -62,45 +57,49 @@ async def save_file(media, client: Client):
         try:
             await file.commit()
         except DuplicateKeyError:
-            logger.warning(
-                f'{getattr(media, "file_name", "NO_FILE")} is already saved in database'
-            )
-            return False, 0
+            logger.warning(f'{file_name} is already saved in database')
+            return 'dup'
         else:
-            logger.info(f'{getattr(media, "file_name", "NO_FILE")} is saved to database')
-            return True, 1
+            logger.info(f'{file_name} is saved to database')
 
-    file_name = clean_file_name(media.file_name)
-    match = re.search(r"^(.+?)[\s\.-](\d{4})", file_name, re.IGNORECASE)
-    movie_name = match.group(1) if match else file_name
-    processed_movie = await db[COLLECTION_NAME].find_one({"movie_name": {"$regex": movie_name, "$options": "i"}})
-    if processed_movie:
-        print(f'{movie_name} has already been processed')
-        return 'dup'
-    await db[COLLECTION_NAME].insert_one({"movie_name": movie_name})
-    year = match.group(2) if match else "Unknown Year"
-    size = f"{media.file_size / 1048576:.2f} MB" if media.file_size < 1073741824 else f"{media.file_size / 1073741824:.2f} GB"
-    buttons = [[
-        InlineKeyboardButton('🔍 Search this movie here', url=MOVIE_GROUP_LINK)
-    ]]
-    reply_markup = InlineKeyboardMarkup(buttons)
-    await client.send_message(
-        chat_id=FILE_UPDATE_CHANNEL,
-        text=script.INDEX_FILE_TXT.format(movie_name, year, size),  # Modify as per required format
-        reply_markup=reply_markup
-    )
-    return 'suc'
+            movie_name = clean_file_name(media.file_name)            
+            year = extract_year(media.file_name)
+            language = extract_language(media.file_name)
+            processed_movie = await db[COLLECTION_NAME].find_one({"movie_name": movie_name})
+            if processed_movie:
+                logger.info(f'{movie_name} has already been processed')
+                return 'dup'
+            await db[COLLECTION_NAME].insert_one({"movie_name": movie_name})
+            if media.file_size < 1073741824:
+                size = f"{media.file_size / 1048576:.2f} MB"
+            else:
+                size = f"{media.file_size / 1073741824:.2f} GB"
+            buttons = [[
+                InlineKeyboardButton('🔍 ꜱᴇᴀʀᴄʜ ᴛʜɪꜱ ᴍᴏᴠɪᴇ ʜᴇʀᴇ', url=MOVIE_GROUP_LINK)
+            ]]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            await client.send_message(
+                chat_id=FILE_UPDATE_CHANNEL,
+                text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
+                reply_markup=reply_markup)
+            return 'suc'
 
-async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0, filter=False):
+async def get_search_results(chat_id, query, file_type=None, max_results=10, offset=0):
     """For given query return (results, next_offset)"""
     if chat_id is not None:
         settings = await get_settings(int(chat_id))
         try:
-            max_results = 10 if settings.get('max_btn') else int(MAX_B_TN)
+            if settings['max_btn']:
+                max_results = 10
+            else:
+                max_results = int(MAX_B_TN)
         except KeyError:
             await save_group_settings(int(chat_id), 'max_btn', False)
             settings = await get_settings(int(chat_id))
-            max_results = 10 if settings.get('max_btn') else int(MAX_B_TN)
+            if settings['max_btn']:
+                max_results = 10
+            else:
+                max_results = int(MAX_B_TN)
 
     query = query.strip()
     if not query:
@@ -109,25 +108,35 @@ async def get_search_results(chat_id, query, file_type=None, max_results=10, off
         raw_pattern = r'(\b|[\.\+\-_])' + query + r'(\b|[\.\+\-_])'
     else:
         raw_pattern = query.replace(' ', r'.*[\s\.\+\-_]')
-
+    
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except re.error:
+    except:
         return []
 
-    filter = {'$or': [{'file_name': regex}, {'caption': regex}]} if USE_CAPTION_FILTER else {'file_name': regex}
+    if USE_CAPTION_FILTER:
+        filter = {'$or': [{'file_name': regex}, {'caption': regex}]}
+    else:
+        filter = {'file_name': regex}
+
     if file_type:
         filter['file_type'] = file_type
 
     total_results = await Media.count_documents(filter)
-    next_offset = offset + max_results if offset + max_results <= total_results else ''
+    next_offset = offset + max_results
 
-    cursor = Media.find(filter).sort('$natural', -1).skip(offset).limit(max_results)
+    if next_offset > total_results:
+        next_offset = ''
+
+    cursor = Media.find(filter)
+    cursor.sort('$natural', -1)
+    cursor.skip(offset).limit(max_results)
     files = await cursor.to_list(length=max_results)
 
     return files, next_offset, total_results
 
-async def get_bad_files(query, file_type=None, filter=False):
+async def get_bad_files(query, file_type=None):
+    """For given query return (results, next_offset)"""
     query = query.strip()
     if not query:
         raw_pattern = '.'
@@ -135,18 +144,24 @@ async def get_bad_files(query, file_type=None, filter=False):
         raw_pattern = r'(\b|[\.\+\-_])' + query + r'(\b|[\.\+\-_])'
     else:
         raw_pattern = query.replace(' ', r'.*[\s\.\+\-_]')
-
+    
     try:
         regex = re.compile(raw_pattern, flags=re.IGNORECASE)
-    except re.error:
+    except:
         return []
 
-    filter = {'$or': [{'file_name': regex}, {'caption': regex}]} if USE_CAPTION_FILTER else {'file_name': regex}
+    if USE_CAPTION_FILTER:
+        filter = {'$or': [{'file_name': regex}, {'caption': regex}]}
+    else:
+        filter = {'file_name': regex}
+
     if file_type:
         filter['file_type'] = file_type
 
     total_results = await Media.count_documents(filter)
-    cursor = Media.find(filter).sort('$natural', -1)
+
+    cursor = Media.find(filter)
+    cursor.sort('$natural', -1)
     files = await cursor.to_list(length=total_results)
 
     return files, total_results
@@ -168,6 +183,7 @@ def encode_file_id(s: bytes) -> str:
             if n:
                 r += b"\x00" + bytes([n])
                 n = 0
+
             r += bytes([i])
 
     return base64.urlsafe_b64encode(r).decode().rstrip("=")
@@ -189,3 +205,56 @@ def unpack_new_file_id(new_file_id):
     )
     file_ref = encode_file_ref(decoded.file_reference)
     return file_id, file_ref
+
+def extract_year(file_name):
+    """Extracts the year from the file name."""
+    match = re.search(r'\b(19\d{2}|20\d{2})\b', file_name)
+    if match:
+        return match.group(1)
+    return None
+
+def extract_language(file_name):
+    """Extracts the language from the file name."""
+    language_patterns = [
+        r'\b(Hindi|English|Tamil|Telugu|Malayalam|Kannada)\b',
+    ]
+    for pattern in language_patterns:
+        match = re.search(pattern, file_name, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+def clean_file_name(file_name):
+    file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
+    file_name = file_name.rsplit('.', 1)[0]
+    file_name = file_name.replace("_", " ")
+    file_name = file_name.replace('#', '')
+    file_name = file_name.replace('×', '')
+    file_name = re.sub(r'\b\d{4}\b', '', file_name)
+    language_codes = ['english', 'hindi', 'kannada', 'malayalam', 'tamil', 'telugu', 'bengali', 
+                       'marathi', 'gujarati', 'punjabi', 'urdu', 'french', 'spanish', 'german',
+                       'japanese', 'korean', 'chinese', 'russian', 'arabic', 'portuguese']
+    file_name = ' '.join(filter(
+        lambda x: not x.startswith(('[', '@', 'www.'))
+                  and not x.lower() in [
+                      '1080p', '2160p', '4k', '5k', '8k', '1440p', '2k', '480p', '360p', '720p', 
+                      'hd', 'fhd', 'qhd', 'uhd', 'sd', 'hdtv', 'webrip', 'bluray', 'blu-ray', 'brrip',
+                      'h264', 'h.264', 'h265', 'h.265', 'x264', 'x.264', 'x265', 'x.265', 'hevc', 
+                      'aac', 'ac3', 'dts', 'dts-hd', 'mp3', 'flac', 'opus', 
+                      'web-dl', 'webdl', 'dvdrip', 'dvd-rip', 'xvid', 'divx', 
+                      'hdr', 'hdr10', 'hdr10+', 'dolby vision', 'dv',
+                      'hdrip', 'hdts', 'camrip', 'cam', 'telesync', 'ts', 'tc',
+                      'esubs', 'esub', 'subtitles', 'subs',
+                      'avc', 'truehd', 'atmos', 'dd5.1', 'dd7.1',
+                      'hq', 'remastered', 'extended', 'unrated', 'director\'s cut', 
+                      'remux', 'encode', 'multi', 'dual audio', 'multi-audio',
+                      'predvd', 'pre-dvd', 'screener'
+                  ]
+                  and not x.lower() in language_codes
+                  and not x.lower().startswith(('x2', 'x'))
+                  and not x.isdigit(),  # Remove standalone numbers 
+        file_name.split()
+    ))
+    file_name = re.sub(r'[^\w\s]', '', file_name)
+    file_name = ' '.join(file_name.split())
+    return file_name
