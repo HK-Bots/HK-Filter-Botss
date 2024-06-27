@@ -75,7 +75,7 @@ async def save_file(media, client: Client):
             ]]
             reply_markup = InlineKeyboardMarkup(buttons)
             await client.send_message(
-                chat_id=LOG_CHANNEL,
+                chat_id=FILE_UPDATE_CHANNEL,
                 text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
                 reply_markup=reply_markup)
             return 'suc' 
