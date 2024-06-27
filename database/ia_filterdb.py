@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from marshmallow.exceptions import ValidationError
 from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN
 from utils import get_settings, save_group_settings
+from info *    
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,7 +34,7 @@ class Media(Document):
         collection_name = COLLECTION_NAME
 
 
-async def save_file(media):
+async def save_file(media, client: Client): 
     """Save file in database"""
 
     # TODO: Find better way to get same file_id for same media to avoid duplicates
@@ -55,15 +56,86 @@ async def save_file(media):
     else:
         try:
             await file.commit()
-        except DuplicateKeyError:      
-            logger.warning(
-                f'{getattr(media, "file_name", "NO_FILE")} is already saved in database'
-            )
-
-            return False, 0
+        except DuplicateKeyError:
+            print(f'{file_name} is already saved in database') 
+            return 'dup'
         else:
-            logger.info(f'{getattr(media, "file_name", "NO_FILE")} is saved to database')
-            return True, 1
+            print(f'{file_name} is saved to database')
+
+          #Nothing Much Brother
+            movie_name = clean_file_name(media.file_name)            
+            year = extract_year(media.file_name)
+            language = extract_language(media.file_name)            
+            if media.file_size < 1073741824:
+                size = f"{media.file_size / 1048576:.2f} MB"
+            else:
+                size = f"{media.file_size / 1073741824:.2f} GB"
+            buttons = [[
+            InlineKeyboardButton('🔍 ꜱᴇᴀʀᴄʜ ᴛʜɪꜱ ᴍᴏᴠɪᴇ ʜᴇʀᴇ', url=MOVIE_GROUP_LINK)
+            ]]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            await client.send_message(
+                chat_id=LOG_CHANNEL,
+                text=script.INDEX_FILE_TXT.format(movie_name, year, language, size),
+                reply_markup=reply_markup)
+            return 'suc' 
+
+#Add This Code In Your Repo
+
+def extract_year(file_name):
+    """Extracts the year from the file name."""
+    match = re.search(r'\b(19\d{2}|20\d{2})\b', file_name)
+    if match:
+        return match.group(1)
+    return None
+
+def extract_language(file_name):
+    """Extracts the language from the file name."""
+    # Add language patterns you want to extract
+    language_patterns = [
+        r'\b(Hindi|English|Tamil|Telugu|Malayalam|Kannada)\b',
+        # Add more language patterns as needed
+    ]
+    for pattern in language_patterns:
+        match = re.search(pattern, file_name, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+def clean_file_name(file_name):
+    file_name = re.sub(r"\[.*?\]|\{.*?\}|\(.*?\)", "", file_name)
+    file_name = file_name.rsplit('.', 1)[0]
+    file_name = file_name.replace("_", " ")
+    file_name = file_name.replace('#', '')
+    file_name = file_name.replace('×', '')
+    file_name = re.sub(r'\b\d{4}\b', '', file_name)
+    language_codes = ['english', 'hindi', 'kannada', 'malayalam', 'tamil', 'telugu', 'bengali', 
+                       'marathi', 'gujarati', 'punjabi', 'urdu', 'french', 'spanish', 'german',
+                       'japanese', 'korean', 'chinese', 'russian', 'arabic', 'portuguese']
+    file_name = ' '.join(filter(
+    lambda x: not x.startswith(('[', '@', 'www.'))
+              and not x.lower() in [
+                  '1080p', '2160p', '4k', '5k', '8k', '1440p', '2k', '480p', '360p', '720p', 
+                  'hd', 'fhd', 'qhd', 'uhd', 'sd', 'hdtv', 'webrip', 'bluray', 'blu-ray', 'brrip',
+                  'h264', 'h.264', 'h265', 'h.265', 'x264', 'x.264', 'x265', 'x.265', 'hevc', 
+                  'aac', 'ac3', 'dts', 'dts-hd', 'mp3', 'flac', 'opus', 
+                  'web-dl', 'webdl', 'dvdrip', 'dvd-rip', 'xvid', 'divx', 
+                  'hdr', 'hdr10', 'hdr10+', 'dolby vision', 'dv',
+                  'hdrip', 'hdts', 'camrip', 'cam', 'telesync', 'ts', 'tc',
+                  'esubs', 'esub', 'subtitles', 'subs',
+                  'avc', 'truehd', 'atmos', 'dd5.1', 'dd7.1',
+                  'hq', 'remastered', 'extended', 'unrated', 'director\'s cut', 
+                  'remux', 'encode', 'multi', 'dual audio', 'multi-audio',
+                  'predvd', 'pre-dvd', 'screener'
+              ]
+              and not x.lower() in language_codes
+              and not x.lower().startswith(('x2', 'x'))
+              and not x.isdigit(),  # Remove standalone numbers 
+    file_name.split()
+    ))
+    file_name = re.sub(r'[^\w\s]', '', file_name)
+    file_name = ' '.join(file_name.split())
+    return file_name
 
 
 
