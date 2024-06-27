@@ -10,6 +10,7 @@ from marshmallow.exceptions import ValidationError
 from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME, USE_CAPTION_FILTER, MAX_B_TN
 from utils import get_settings, save_group_settings
 from info import MOVIE_GROUP_LINK,FILE_UPDATE_CHANNEL
+from some_library import Client
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,7 +35,7 @@ class Media(Document):
         collection_name = COLLECTION_NAME
 
 
-async def save_file(media, client: Client): 
+async def save_file(media, client: Client):
     """Save file in database"""
 
     # TODO: Find better way to get same file_id for same media to avoid duplicates
