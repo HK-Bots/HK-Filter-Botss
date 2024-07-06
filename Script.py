@@ -248,11 +248,12 @@ Hᴇʟᴘ : <b>Sᴇᴛᴛɪɴɢꜱ</b>
 
 </b>"""
 
-    INDEX_FILE_TXT = """ #NEW_MOVIE_UPLODED
-
-MOVIE NAME = <code>{}</code>
-
-MOVIE YEAR = {}"""
+    MOVIES_UPDATE_TXT = """<b>#New_File_Added
+Title: {title}
+Rating: {rating}
+Genre: {genre}
+Description: {description}
+</b>"""
 
     STATUS_TXT = """<b>
 ‣ ᴛᴏᴛᴀʟ ꜰɪʟᴇs: <code>{}</code>
