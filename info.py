@@ -167,6 +167,8 @@ else:
 # add premium logs channel id
 PREMIUM_LOGS = int(environ.get('PREMIUM_LOGS', '-1002139657732'))
 
+MOVIE_UPDATE_CHANNEL = int(environ.get('MOVIE_UPDATE_CHANNEL', '-1001479144364'))
+
 FILE_UPDATE_CHANNEL = int(environ.get('FILE_UPDATE_CHANNEL', '-1001479144364'))
 
 MOVIE_GROUP_LINK = environ.get('MOVIE_GROUP_LINK', 'https://t.me/moviehubsearchgroup')
